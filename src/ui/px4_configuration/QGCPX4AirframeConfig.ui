@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>602</width>
-    <height>345</height>
+    <width>831</width>
+    <height>664</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,8 +24,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>561</width>
-        <height>299</height>
+        <width>805</width>
+        <height>604</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="gridLayout">
@@ -93,6 +93,9 @@
          </item>
          <item>
           <widget class="QComboBox" name="flyingWingComboBox">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <item>
             <property name="text">
              <string>Bormatec CamFlyer Q</string>
@@ -125,6 +128,9 @@
          </item>
          <item>
           <widget class="QComboBox" name="quadXComboBox">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <item>
             <property name="text">
              <string>AR.Drone Frame</string>
@@ -161,12 +167,16 @@
          <item>
           <widget class="QPushButton" name="QuadPlusPushButton">
            <property name="text">
-            <string>PushButton</string>
+            <string/>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox_4"/>
+          <widget class="QComboBox" name="comboBox_4">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
          </item>
          <item>
           <widget class="QLabel" name="label_4">
@@ -182,7 +192,7 @@
          <item>
           <widget class="QPushButton" name="HexaXPushButton">
            <property name="text">
-            <string>PushButton</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -203,7 +213,7 @@
          <item>
           <widget class="QPushButton" name="HexaPlusPushButton">
            <property name="text">
-            <string>PushButton</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -224,7 +234,7 @@
          <item>
           <widget class="QPushButton" name="octoXPushButton">
            <property name="text">
-            <string>PushButton</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -245,7 +255,7 @@
          <item>
           <widget class="QPushButton" name="octoPlusPushButton">
            <property name="text">
-            <string>PushButton</string>
+            <string/>
            </property>
           </widget>
          </item>
@@ -266,7 +276,7 @@
          <item>
           <widget class="QPushButton" name="hPushButton">
            <property name="text">
-            <string>PushButton</string>
+            <string/>
            </property>
           </widget>
          </item>

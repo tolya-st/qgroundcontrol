@@ -17,6 +17,7 @@
 #include "QGC.h"
 #include "QGCToolWidget.h"
 #include "ui_QGCVehicleConfig.h"
+#include "px4_configuration/QGCPX4AirframeConfig.h"
 
 QGCVehicleConfig::QGCVehicleConfig(QWidget *parent) :
     QWidget(parent),
@@ -33,6 +34,7 @@ QGCVehicleConfig::QGCVehicleConfig(QWidget *parent) :
     changed(true),
     rc_mode(RC_MODE_NONE),
     calibrationEnabled(false),
+    px4AirframeConfig(NULL),
     ui(new Ui::QGCVehicleConfig)
 {
     doneLoadingConfig = false;
@@ -59,6 +61,7 @@ QGCVehicleConfig::QGCVehicleConfig(QWidget *parent) :
     connect(ui->sensorMenuButton,SIGNAL(clicked()),this,SLOT(sensorMenuButtonClicked()));
     connect(ui->generalMenuButton,SIGNAL(clicked()),this,SLOT(generalMenuButtonClicked()));
     connect(ui->advancedMenuButton,SIGNAL(clicked()),this,SLOT(advancedMenuButtonClicked()));
+    connect(ui->airframeMenuButton, SIGNAL(clicked()), this, SLOT(airframeMenuButtonClicked()));
 
     ui->rcModeComboBox->setCurrentIndex((int)rc_mode - 1);
 
@@ -117,10 +120,15 @@ void QGCVehicleConfig::sensorMenuButtonClicked()
 
 void QGCVehicleConfig::generalMenuButtonClicked()
 {
-    ui->stackedWidget->setCurrentIndex(ui->stackedWidget->count()-2);
+    ui->stackedWidget->setCurrentIndex(ui->stackedWidget->count()-3);
 }
 
 void QGCVehicleConfig::advancedMenuButtonClicked()
+{
+    ui->stackedWidget->setCurrentIndex(ui->stackedWidget->count()-2);
+}
+
+void QGCVehicleConfig::airframeMenuButtonClicked()
 {
     ui->stackedWidget->setCurrentIndex(ui->stackedWidget->count()-1);
 }
@@ -842,6 +850,11 @@ void QGCVehicleConfig::setActiveUAS(UASInterface* active)
             child->deleteLater();
         }
 
+        foreach(QWidget* child, ui->airframeLayout->findChildren<QWidget*>())
+        {
+            child->deleteLater();
+        }
+
         // And then delete any custom tabs
         foreach(QWidget* child, additionalTabs)
         {
@@ -898,6 +911,14 @@ void QGCVehicleConfig::setActiveUAS(UASInterface* active)
     QTimer::singleShot(1,this,SLOT(loadConfig()));
 
     updateStatus(QString("Reading from system %1").arg(mav->getUASName()));
+
+    // Check if this is a PX4
+    if (mav->getAutopilotType() == MAV_AUTOPILOT_PX4) {
+        if (!px4AirframeConfig) {
+            px4AirframeConfig = new QGCPX4AirframeConfig();
+            ui->airframeLayout->addWidget(px4AirframeConfig);
+        }
+    }
 
     // Since a system is now connected, enable the VehicleConfig UI.
     ui->setButton->setEnabled(true);
@@ -1402,7 +1423,7 @@ void QGCVehicleConfig::updateMinMax()
     ui->yawWidget->setMax(rcMax[2]);
     ui->throttleWidget->setMin(rcMin[3]);
     ui->throttleWidget->setMax(rcMax[3]);
-    ui->radio5Widget->setMin(rcMin[4]);
+    ui->radio5Widget->setMin(rcMin[4]);QGCPX4AirframeConfig
     ui->radio5Widget->setMax(rcMax[4]);
     ui->radio6Widget->setMin(rcMin[5]);
     ui->radio6Widget->setMax(rcMax[5]);

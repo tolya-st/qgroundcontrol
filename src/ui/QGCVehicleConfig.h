@@ -9,6 +9,7 @@
 
 #include "QGCToolWidget.h"
 #include "UASInterface.h"
+#include "px4_configuration/QGCPX4AirframeConfig.h"
 
 namespace Ui {
 class QGCVehicleConfig;
@@ -35,6 +36,7 @@ public slots:
     void sensorMenuButtonClicked();
     void generalMenuButtonClicked();
     void advancedMenuButtonClicked();
+    void airframeMenuButtonClicked();
 
     /** Set the MAV currently being calibrated */
     void setActiveUAS(UASInterface* active);
@@ -191,6 +193,8 @@ protected:
     QMap<QString,QMap<QString,QGCToolWidget*> > systemTypeToParamMap;   ///< Holds all loaded MAV specific parameter widgets, for every MAV.
     QMap<QGCToolWidget*,QGroupBox*> toolToBoxMap;                       ///< Easy method of figuring out which QGroupBox is tied to which ToolWidget.
     QMap<QString,QString> paramTooltips;                                ///< Tooltips for the ? button next to a parameter.
+
+    QGCPX4AirframeConfig* px4AirframeConfig;
 
 private:
     Ui::QGCVehicleConfig *ui;
