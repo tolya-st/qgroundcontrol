@@ -154,7 +154,11 @@ QGCPX4VehicleConfig::QGCPX4VehicleConfig(QWidget *parent) :
     ui->graphicsView->hide();
 
     ui->rcCalibrationButton->setCheckable(true);
+    ui->rcCalibrationButton->setEnabled(false);
     connect(ui->rcCalibrationButton, SIGNAL(clicked(bool)), this, SLOT(toggleCalibrationRC(bool)));
+    ui->spektrumPairButton->setCheckable(true);
+    ui->spektrumPairButton->setEnabled(false);
+    connect(ui->spektrumPairButton, SIGNAL(clicked(bool)), this, SLOT(toggleSpektrumPairing(bool)));
 
     //TODO connect buttons here to save/clear actions?
     UASInterface* tmpMav = UASManager::instance()->getActiveUAS();
@@ -239,6 +243,8 @@ QGCPX4VehicleConfig::QGCPX4VehicleConfig(QWidget *parent) :
     connect(&updateTimer, SIGNAL(timeout()), this, SLOT(updateView()));
     updateTimer.start();
 
+    ui->rcLabel->setText(tr("NO RADIO CONTROL INPUT DETECTED. PLEASE ENSURE THE TRANSMITTER IS ON."));
+
 }
 
 QGCPX4VehicleConfig::~QGCPX4VehicleConfig()
@@ -300,11 +306,10 @@ void QGCPX4VehicleConfig::identifyChannelMapping(int aert_index)
         }
     }
 
-    msgBox.setText(tr("Identifying %1 channel").arg(channelNames[channelWanted]));
-    msgBox.setInformativeText(tr("Please move stick, switch or potentiometer for the %1 channel\n all the way up/down or left/right.").arg(channelNames[channelWanted]));
-    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.setText(tr("Detecting %1 ...\t\t").arg(channelNames[channelWanted]));
+    msgBox.setInformativeText(tr("Please move stick, switch or potentiometer for this channel all the way up/down or left/right."));
+    msgBox.setStandardButtons(QMessageBox::NoButton);
     skipActionButton = msgBox.addButton(tr("Skip"),QMessageBox::RejectRole);
-    msgBox.setDefaultButton(QMessageBox::Ok);
     msgBox.exec();
     skipActionButton->hide();
     msgBox.removeButton(skipActionButton);
@@ -325,6 +330,22 @@ void QGCPX4VehicleConfig::toggleCalibrationRC(bool enabled)
     else
     {
         stopCalibrationRC();
+    }
+}
+
+void QGCPX4VehicleConfig::toggleSpektrumPairing(bool enabled)
+{
+    if (enabled)
+    {
+        mav->getParamManager()->setPendingParam(0, "RC_DSM_BIND", (int)1);
+        // Do not save this parameter, just set in RAM
+        mav->getParamManager()->sendPendingParameters();
+    }
+    else
+    {
+        mav->getParamManager()->setPendingParam(0, "RC_DSM_BIND", (int)0);
+        // Do not save this parameter, just set in RAM
+        mav->getParamManager()->sendPendingParameters();
     }
 }
 
@@ -404,11 +425,10 @@ void QGCPX4VehicleConfig::detectChannelInversion(int aert_index)
     instructions << "AUX1: Push down / towards you or turn dial to the leftmost position";
     instructions << "AUX2: Push down / towards you or turn dial to the leftmost position";
 
-    msgBox.setText(tr("Identifying DIRECTION of %1 channel").arg(channelNames[channelReverseStateWanted]));
+    msgBox.setText(tr("%1 Direction").arg(channelNames[channelReverseStateWanted]));
     msgBox.setInformativeText(tr("%2").arg((aert_index < instructions.length()) ? instructions[aert_index] : ""));
-    msgBox.setStandardButtons(QMessageBox::Ok);
+    msgBox.setStandardButtons(QMessageBox::NoButton);
     skipActionButton = msgBox.addButton(tr("Skip"),QMessageBox::RejectRole);
-    msgBox.setDefaultButton(QMessageBox::Ok);
     msgBox.exec();
     skipActionButton->hide();
     msgBox.removeButton(skipActionButton);
@@ -422,12 +442,22 @@ void QGCPX4VehicleConfig::detectChannelInversion(int aert_index)
 void QGCPX4VehicleConfig::startCalibrationRC()
 {
     if (chanCount < 5) {
-        QMessageBox::warning(0,tr("Warning! Not enough RC channels"), tr("Detected %1 radio channels. To operate PX4, you need at least 5 channels. Is the radio control connected?").arg(chanCount));
+        QMessageBox::warning(0,
+                             tr("RC not Connected"),
+                             tr("Is the RC receiver connected and transmitter turned on? Detected %1 radio channels. To operate PX4, you need at least 5 channels. ").arg(chanCount));
+        ui->rcCalibrationButton->setChecked(false);
         return;
     }
 
+    // reset all channel mappings above Ch 5 to invalid/unused value before starting calibration
+    for (unsigned int j= 5; j < chanMappedMax; j++) {
+        rcMapping[j] = -1;
+    }
+
     configEnabled = true;
-    QMessageBox::warning(0,"Warning!","You are about to start radio calibration.\nPlease ensure all motor power is disconnected AND all props are removed from the vehicle.\nAlso ensure transmitter and receiver are powered and connected.\nRESET ALL TRIMS TO CENTER!\n\nDo not move the RC sticks, then click OK to confirm");
+
+    QMessageBox::warning(0,tr("Safety Warning"),
+                         tr("Starting RC calibration.\n\nEnsure that motor power is disconnected, all props are removed, RC transmitter and receiver are powered and connected.\n\nReset transmitter trims to center, then click OK to continue"));
 
     //go ahead and try to map first 8 channels, now that user can skip channels
     for (int i = 0; i < 8; i++) {
@@ -457,7 +487,10 @@ void QGCPX4VehicleConfig::startCalibrationRC()
 
 void QGCPX4VehicleConfig::stopCalibrationRC()
 {
-    QMessageBox::information(0,"Trims","Ensure all sticks are centeres and throttle is in the downmost position, click OK to continue");
+    if (!calibrationEnabled)
+        return;
+
+    QMessageBox::information(0,"Trims","Ensure all controls are centered and throttle is in the lowest position. Click OK to continue");
 
     calibrationEnabled = false;
     configEnabled = false;
@@ -486,10 +519,10 @@ void QGCPX4VehicleConfig::stopCalibrationRC()
     setTrimPositions();
 
     QString statusstr;
-    statusstr = "Below you will find the detected radio calibration information that will be sent to the autopilot\n";
-    statusstr += "Normal values are around 1100 to 1900, with disconnected channels reading 1000, 1500, 2000\n\n";
-    statusstr += "Channel\tMin\tCenter\tMax\n";
-    statusstr += "--------------------\n";
+    statusstr = tr("This is the RC calibration information that will be sent to the autopilot if you click OK. To prevent transmission, click Cancel.");
+    statusstr += tr("  Normal values range from 1000 to 2000, with disconnected channels reading 1000, 1500, 2000\n\n");
+    statusstr += tr("Channel\tMin\tCenter\tMax\n");
+    statusstr += "-------\t---\t------\t---\n";
     for (unsigned int i=0; i < chanCount; i++) {
         statusstr += QString::number(i) +"\t"+ QString::number(rcMin[i]) +"\t"+ QString::number(rcValue[i]) +"\t"+ QString::number(rcMax[i]) +"\n";
     }
@@ -1127,6 +1160,9 @@ void QGCPX4VehicleConfig::setActiveUAS(UASInterface* active)
     ui->airframeMenuButton->setEnabled(true);
     ui->sensorMenuButton->setEnabled(true);
     ui->rcMenuButton->setEnabled(true);
+
+    ui->rcCalibrationButton->setEnabled(true);
+    ui->spektrumPairButton->setEnabled(true);
 }
 
 void QGCPX4VehicleConfig::resetCalibrationRC()
@@ -1235,10 +1271,13 @@ void QGCPX4VehicleConfig::remoteControlChannelRawChanged(int chan, float fval)
             channelWanted = -1;
 
             // Confirm found channel
-            msgBox.setText(tr("%1 Channel found.").arg(channelNames[chanFound]));
-            msgBox.setInformativeText(tr("Found %1 to be on the raw RC channel %2").arg(channelNames[chanFound]).arg(chan + 1));
+            msgBox.setText(tr("Found %1 \t\t").arg(channelNames[chanFound]));
+            msgBox.setInformativeText(tr("Assigned raw RC channel %2").arg(chan + 1));
             msgBox.setStandardButtons(QMessageBox::Ok);
             msgBox.setDefaultButton(QMessageBox::Ok);
+            skipActionButton->hide();
+            msgBox.removeButton(skipActionButton);
+
             (void)msgBox.exec();
 
             // XXX fuse with parameter update handling
@@ -1364,17 +1403,19 @@ void QGCPX4VehicleConfig::remoteControlChannelRawChanged(int chan, float fval)
             channelReverseStateWanted = -1;
 
             // Confirm found channel
-            msgBox.setText(tr("Direction of %1 Channel assigned").arg(channelNames[currRevFunc]));
-            msgBox.setInformativeText(tr("%1").arg((rcRev[rcMapping[currRevFunc]]) ? "Reversed channel." : "Did not reverse channel."));
+            msgBox.setText(tr("%1 direction assigned").arg(channelNames[currRevFunc]));
+            msgBox.setInformativeText(tr("%1").arg((rcRev[rcMapping[currRevFunc]]) ? tr("Reversed channel.") : tr("Did not reverse channel.") ));
             msgBox.setStandardButtons(QMessageBox::Ok);
             msgBox.setDefaultButton(QMessageBox::Ok);
+            skipActionButton->hide();
+            msgBox.removeButton(skipActionButton);
             (void)msgBox.exec();
         }
     }
 
     dataModelChanged = true;
 
-    qDebug() << "RC CHAN:" << chan << "PPM:" << fval << "NORMALIZED:" << normalized;
+    //qDebug() << "RC CHAN:" << chan << "PPM:" << fval << "NORMALIZED:" << normalized;
 }
 
 void QGCPX4VehicleConfig::updateAllInvertedCheckboxes()
@@ -1796,5 +1837,8 @@ void QGCPX4VehicleConfig::updateView()
 
         updateRcWidgetValues();
         updateRcChanLabels();
+        if (chanCount > 0)
+            ui->rcLabel->setText(tr("Radio control detected with %1 channels.").arg(chanCount));
     }
+
 }
