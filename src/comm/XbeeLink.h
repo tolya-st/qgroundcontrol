@@ -22,7 +22,7 @@ public:
 public: // virtual functions from XbeeLinkInterface
 	QString getPortName() const;
 	void requestReset() { }
-	int getBaudRate();
+	int getBaudRate() const;
 
 public slots: // virtual functions from XbeeLinkInterface
 	bool setPortName(QString portName);
