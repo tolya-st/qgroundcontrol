@@ -45,6 +45,8 @@ public slots:
     void advancedMenuButtonClicked();
     void airframeMenuButtonClicked();
     void firmwareMenuButtonClicked();
+    void multirotorMenuButtonClicked();
+    void fixedwingMenuButtonClicked();
 
     void identifyChannelMapping(int aert_index);
 

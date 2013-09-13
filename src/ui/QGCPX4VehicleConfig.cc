@@ -29,8 +29,10 @@
 #define WIDGET_INDEX_RC 1
 #define WIDGET_INDEX_SENSOR_CAL 2
 #define WIDGET_INDEX_AIRFRAME_CONFIG 3
-#define WIDGET_INDEX_GENERAL_CONFIG 4
-#define WIDGET_INDEX_ADV_CONFIG 5
+#define WIDGET_INDEX_MULTIROTOR_CONFIG 4
+#define WIDGET_INDEX_FIXEDWING_CONFIG 5
+#define WIDGET_INDEX_GENERAL_CONFIG 6
+#define WIDGET_INDEX_ADV_CONFIG 7
 
 #define MIN_PWM_VAL 800
 #define MAX_PWM_VAL 2200
@@ -140,6 +142,10 @@ QGCPX4VehicleConfig::QGCPX4VehicleConfig(QWidget *parent) :
             this, SLOT(airframeMenuButtonClicked()));
     connect(ui->firmwareMenuButton, SIGNAL(clicked()),
             this, SLOT(firmwareMenuButtonClicked()));
+    connect(ui->multirotorButton, SIGNAL(clicked()),
+            this, SLOT(multirotorMenuButtonClicked()));
+    connect(ui->fixedwingButton, SIGNAL(clicked()),
+            this, SLOT(fixedwingMenuButtonClicked()));
 
     connect(ui->advancedCheckBox, SIGNAL(clicked(bool)), ui->advancedGroupBox, SLOT(setVisible(bool)));
     ui->advancedGroupBox->setVisible(false);
@@ -152,6 +158,8 @@ QGCPX4VehicleConfig::QGCPX4VehicleConfig(QWidget *parent) :
 
     // XXX hide while WIP
     ui->graphicsView->hide();
+    ui->fixedwingButton->hide();
+    ui->multirotorButton->hide();
 
     ui->rcCalibrationButton->setCheckable(true);
     ui->rcCalibrationButton->setEnabled(false);
@@ -287,6 +295,18 @@ void QGCPX4VehicleConfig::firmwareMenuButtonClicked()
 {
     ui->stackedWidget->setCurrentIndex(WIDGET_INDEX_FIRMWARE);
     ui->tabTitleLabel->setText(tr("Firmware Upgrade"));
+}
+
+void QGCPX4VehicleConfig::multirotorMenuButtonClicked()
+{
+    ui->stackedWidget->setCurrentIndex(WIDGET_INDEX_MULTIROTOR_CONFIG);
+    ui->tabTitleLabel->setText(tr("Multirotor Configuration"));
+}
+
+void QGCPX4VehicleConfig::fixedwingMenuButtonClicked()
+{
+    ui->stackedWidget->setCurrentIndex(WIDGET_INDEX_FIXEDWING_CONFIG);
+    ui->tabTitleLabel->setText(tr("Fixedwing Configuration"));
 }
 
 void QGCPX4VehicleConfig::identifyChannelMapping(int aert_index)
