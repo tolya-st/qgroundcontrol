@@ -1864,7 +1864,6 @@ void UAS::sendMessage(mavlink_message_t message)
         {
             if (link->isConnected())
                 sendMessage(link, message);
-            qDebug() << "SENT MESSAGE id" << message.msgid << "component" << message.compid;
         }
         else
         {
@@ -2611,7 +2610,7 @@ void UAS::requestParameter(int component, const QString& parameter)
     read.target_component = component;
     mavlink_msg_param_request_read_encode(mavlink->getSystemId(), mavlink->getComponentId(), &msg, &read);
     sendMessage(msg);
-    qDebug() << __FILE__ << __LINE__ << "REQUESTING PARAM RETRANSMISSION FROM COMPONENT" << component << "FOR PARAM NAME" << parameter;
+    //qDebug() << __FILE__ << __LINE__ << "REQUESTING PARAM RETRANSMISSION FROM COMPONENT" << component << "FOR PARAM NAME" << parameter;
 }
 
 /**
@@ -2864,6 +2863,17 @@ void UAS::land()
     mavlink_message_t msg;
 
     mavlink_msg_command_long_pack(mavlink->getSystemId(), mavlink->getComponentId(), &msg, uasId, MAV_COMP_ID_ALL, MAV_CMD_NAV_LAND, 1, 0, 0, 0, 0, 0, 0, 0);
+    sendMessage(msg);
+}
+
+/**
+* Order the robot to start receiver pairing
+*/
+void UAS::pairRX(int rxType, int rxSubType)
+{
+    mavlink_message_t msg;
+
+    mavlink_msg_command_long_pack(mavlink->getSystemId(), mavlink->getComponentId(), &msg, uasId, MAV_COMP_ID_ALL, MAV_CMD_START_RX_PAIR, 0, rxType, rxSubType, 0, 0, 0, 0, 0);
     sendMessage(msg);
 }
 
