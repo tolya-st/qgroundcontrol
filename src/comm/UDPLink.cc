@@ -28,14 +28,15 @@ This file is part of the QGROUNDCONTROL project
  *
  */
 
-#include <QTimer>
-#include <QList>
-#include <QDebug>
-#include <QMutexLocker>
-#include <iostream>
+#include "QsLog.h"
 #include "UDPLink.h"
 #include "LinkManager.h"
 #include "QGC.h"
+
+#include <QTimer>
+#include <QList>
+#include <QMutexLocker>
+#include <iostream>
 #include <QHostInfo>
 //#include <netinet/in.h>
 
@@ -50,6 +51,7 @@ UDPLink::UDPLink(QHostAddress host, quint16 port)
 	this->name = tr("UDP Link (port:%1)").arg(this->port);
 	emit nameChanged(this->name);
     // LinkManager::instance()->add(this);
+    QLOG_INFO() << "UDP Created " << name;
 }
 
 UDPLink::~UDPLink()
@@ -104,10 +106,10 @@ void UDPLink::setPort(int port)
  */
 void UDPLink::addHost(const QString& host)
 {
-    //qDebug() << "UDP:" << "ADDING HOST:" << host;
+    QLOG_INFO() << "UDP:" << "ADDING HOST:" << host;
     if (host.contains(":"))
     {
-        //qDebug() << "HOST: " << host.split(":").first();
+        QLOG_DEBUG() << "HOST: " << host.split(":").first();
         QHostInfo info = QHostInfo::fromName(host.split(":").first());
         if (info.error() == QHostInfo::NoError)
         {
@@ -123,7 +125,7 @@ void UDPLink::addHost(const QString& host)
                 }
             }
             hosts.append(address);
-            //qDebug() << "Address:" << address.toString();
+            QLOG_DEBUG() << "Address:" << address.toString();
             // Set port according to user input
             ports.append(host.split(":").last().toInt());
         }
@@ -191,9 +193,9 @@ void UDPLink::writeBytes(const char* data, qint64 size)
                 ascii.append(219);
             }
         }
-        qDebug() << "Sent" << size << "bytes to" << currentHost.toString() << ":" << currentPort << "data:";
-        qDebug() << bytes;
-        qDebug() << "ASCII:" << ascii;
+        QLOG_TRACE() << "Sent" << size << "bytes to" << currentHost.toString() << ":" << currentPort << "data:";
+        QLOG_TRACE() << bytes;
+        QLOG_TRACE() << "ASCII:" << ascii;
 #endif
         socket->writeDatagram(data, size, currentHost, currentPort);
     }
@@ -263,6 +265,7 @@ qint64 UDPLink::bytesAvailable()
  **/
 bool UDPLink::disconnect()
 {
+    QLOG_INFO() << "UDP disconnect";
 	this->quit();
 	this->wait();
 
@@ -276,6 +279,7 @@ bool UDPLink::disconnect()
 
     emit disconnected();
     emit connected(false);
+    emit disconnected(this);
     return !connectState;
 }
 
@@ -286,6 +290,7 @@ bool UDPLink::disconnect()
  **/
 bool UDPLink::connect()
 {
+    QLOG_INFO() << "UDPLink::UDP connect";
 	if(this->isRunning())
 	{
 		this->quit();
@@ -341,6 +346,7 @@ bool UDPLink::hardwareConnect(void)
     QObject::connect(socket, SIGNAL(readyRead()), this, SLOT(readBytes()));
 
     emit connected(connectState);
+    emit connected(this);
     if (connectState) {
         emit connected();
         connectionStartTime = QGC::groundTimeUsecs()/1000;

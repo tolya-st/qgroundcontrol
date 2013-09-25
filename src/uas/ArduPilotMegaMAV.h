@@ -21,10 +21,103 @@ This file is part of the QGROUNDCONTROL project
 
 ======================================================================*/
 
+/**
+ * @file
+ *   @brief APM UAS specilization Object
+ *
+ *   @author Bill Bonney <billbonney@communistech.com>
+ *
+ */
+
 #ifndef ARDUPILOTMEGAMAV_H
 #define ARDUPILOTMEGAMAV_H
 
 #include "UAS.h"
+#include <QString>
+
+//
+// Auto Pilot modes
+// ----------------
+// Arduplane Flight Mode Defines
+
+class CustomMode {
+public:
+    CustomMode();
+    CustomMode(int aMode);
+    int modeAsInt();
+    virtual QString operator <<(int mode);
+protected:
+    int m_mode;
+};
+
+class ApmPlane: public CustomMode {
+public:
+    enum planeMode {
+    MANUAL        = 0,
+    CIRCLE        = 1,
+    STABILIZE     = 2,
+    TRAINING      = 3,
+    FLY_BY_WIRE_A = 5,
+    FLY_BY_WIRE_B = 6,
+    AUTO          = 10,
+    RTL           = 11,
+    LOITER        = 12,
+    GUIDED        = 15,
+    INITIALIZING  = 16
+    };
+
+public:
+    ApmPlane(planeMode aMode);
+    ApmPlane::planeMode mode();
+    static QString stringForMode(int aMode);
+};
+// Arducopter Flight Mode Defines
+
+class ApmCopter: public CustomMode {
+public:
+    enum copterMode {
+    STABILIZE   = 0,   // hold level position
+    ACRO        = 1,   // rate control
+    ALT_HOLD    = 2,   // AUTO control
+    AUTO        = 3,   // AUTO control
+    GUIDED      = 4,   // AUTO control
+    LOITER      = 5,   // Hold a single location
+    RTL         = 6,   // AUTO control
+    CIRCLE      = 7,   // AUTO control
+    POSITION    = 8,   // AUTO control
+    LAND        = 9,   // AUTO control
+    OF_LOITER   = 10,  // Hold a single location using optical flow
+                       // sensor
+    TOY_A       = 11,  // THOR Enum for Toy mode
+    TOY_M       = 12,  // THOR Enum for Toy mode
+    SPORT       = 13   // [TODO] Verify this is correct.
+    };
+
+public:
+    ApmCopter(copterMode aMode);
+    ApmCopter::copterMode mode();
+    static QString stringForMode(int aMode);
+};
+
+class ApmRover: public CustomMode {
+public:
+    enum roverMode {
+    MANUAL      =0,
+    LEARNING    =2,
+    STEERING    =3,
+    HOLD        =4,
+    AUTO        =10,
+    RTL         =11,
+    GUIDED      =15,
+    INITIALIZING=16
+    };
+public:
+    ApmRover(roverMode aMode);
+    QString operator <<(roverMode aMode);
+    ApmRover::roverMode mode();
+    static QString stringForMode(int aMode);
+};
+
 class ArduPilotMegaMAV : public UAS
 {
     Q_OBJECT
@@ -34,10 +127,30 @@ public:
     void setMountConfigure(unsigned char mode, bool stabilize_roll,bool stabilize_pitch,bool stabilize_yaw);
     /** @brief Set camera mount control */
     void setMountControl(double pa,double pb,double pc,bool islatlong);
+
+    QString getCustomModeText();
+    QString getCustomModeAudioText();
+
 public slots:
     /** @brief Receive a MAVLink message from this MAV */
     void receiveMessage(LinkInterface* link, mavlink_message_t message);
-    void sendTxRequests();
+    void RequestAllDataStreams();
+
+    void systemDisarmed();
+    void systemArmed();
+
+    // Overides from UAS virtual interface
+    virtual void armSystem();
+    virtual void disarmSystem();
+
+    void navModeChanged(int uasid, int mode, const QString& text);
+
+    // UAS Interface
+    void textMessageReceived(int uasid, int componentid, int severity, QString text);
+
+private slots:
+    void uasConnected();
+    void uasDisconnected();
 private:
     QTimer *txReqTimer;
 };

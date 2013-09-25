@@ -28,7 +28,8 @@ This file is part of the QGROUNDCONTROL project
  *
  */
 
-#include <QDebug>
+#include "QsLog.h"
+#include "QGCCore.h"
 
 #include <SerialConfigurationWindow.h>
 #include <SerialLinkInterface.h>
@@ -49,6 +50,15 @@ SerialConfigurationWindow::SerialConfigurationWindow(LinkInterface* link, QWidge
         // Setup the user interface according to link type
         ui.setupUi(this);
 
+        QList<QWidget*> widgetList = this->findChildren<QWidget*>();
+        for (int i=0;i<widgetList.size();i++)
+        {
+            if (qobject_cast<QComboBox*>(widgetList[i]) || qobject_cast<QAbstractSpinBox*>(widgetList[i]) || qobject_cast<QAbstractSlider*>(widgetList[i]))
+            {
+                widgetList[i]->installEventFilter(QGCMouseWheelEventFilter::getFilter());
+            }
+        }
+
         // Create action to open this menu
         // Create configuration action for this link
         // Connect the current UAS
@@ -66,44 +76,44 @@ SerialConfigurationWindow::SerialConfigurationWindow(LinkInterface* link, QWidge
 
 		// Baud rates supported only by POSIX systems
 #if defined(Q_OS_UNIX) || defined(Q_OS_LINUX) || defined(Q_OS_DARWIN)
-		supportedBaudRates << 50;
-		supportedBaudRates << 75;
-		supportedBaudRates << 134;
-		supportedBaudRates << 150;
-		supportedBaudRates << 200;
-		supportedBaudRates << 1800;
+        //supportedBaudRates << 50;
+        //supportedBaudRates << 75;
+        //supportedBaudRates << 134;
+        //supportedBaudRates << 150;
+        //supportedBaudRates << 200;
+        //supportedBaudRates << 1800;
 #endif
 
 		// Baud rates supported only by Windows
 #if defined(Q_OS_WIN)
-		supportedBaudRates << 14400;
-		supportedBaudRates << 56000;
-		supportedBaudRates << 128000;
-		supportedBaudRates << 256000;
+        //supportedBaudRates << 14400;
+        //supportedBaudRates << 56000;
+        //supportedBaudRates << 128000;
+        //supportedBaudRates << 256000;
 #endif
 
 		// Baud rates supported by everyone
-		supportedBaudRates << 110;
-		supportedBaudRates << 300;
-		supportedBaudRates << 600;
-		supportedBaudRates << 1200;
-		supportedBaudRates << 2400;
-		supportedBaudRates << 4800;
+        //supportedBaudRates << 110;
+        //supportedBaudRates << 300;
+        //supportedBaudRates << 600;
+        //supportedBaudRates << 1200;
+        //supportedBaudRates << 2400;
+        //supportedBaudRates << 4800;
 		supportedBaudRates << 9600;
 		supportedBaudRates << 19200;
 		supportedBaudRates << 38400;
 		supportedBaudRates << 57600;
 		supportedBaudRates << 115200;
-        supportedBaudRates << 230400;
-        supportedBaudRates << 460800;
+        //supportedBaudRates << 230400;
+        //supportedBaudRates << 460800;
 
 #if defined(Q_OS_LINUX)
         // Baud rates supported only by Linux
-        supportedBaudRates << 500000;
-        supportedBaudRates << 576000;
+        //supportedBaudRates << 500000;
+        //supportedBaudRates << 576000;
 #endif
 
-        supportedBaudRates << 921600;
+        //supportedBaudRates << 921600;
 		
 		// Now actually add all of our supported baud rates to the UI.
 		qSort(supportedBaudRates.begin(), supportedBaudRates.end());
@@ -115,6 +125,7 @@ SerialConfigurationWindow::SerialConfigurationWindow(LinkInterface* link, QWidge
         ui.portName->setCurrentIndex(ui.baudRate->findText(QString("%1").arg(this->link->getPortName())));
 
         connect(action, SIGNAL(triggered()), this, SLOT(configureCommunication()));
+        ui.advCheckBox->setVisible(false);
 
         // Make sure that a change in the link name will be reflected in the UI
         connect(link, SIGNAL(nameChanged(QString)), this, SLOT(setLinkName(QString)));
@@ -129,10 +140,13 @@ SerialConfigurationWindow::SerialConfigurationWindow(LinkInterface* link, QWidge
         connect(ui.parEven, SIGNAL(toggled(bool)), this, SLOT(setParityEven(bool)));
         connect(ui.dataBitsSpinBox, SIGNAL(valueChanged(int)), this->link, SLOT(setDataBits(int)));
         connect(ui.stopBitsSpinBox, SIGNAL(valueChanged(int)), this->link, SLOT(setStopBits(int)));
+        connect(ui.advCheckBox,SIGNAL(clicked(bool)),ui.advGroupBox,SLOT(setShown(bool)));
+        ui.advCheckBox->setChecked(false);
+        ui.advGroupBox->setVisible(false);
 
         //connect(this->link, SIGNAL(connected(bool)), this, SLOT());
-        ui.portName->setSizeAdjustPolicy(QComboBox::AdjustToContentsOnFirstShow);
-        ui.baudRate->setSizeAdjustPolicy(QComboBox::AdjustToContentsOnFirstShow);
+        //ui.portName->setSizeAdjustPolicy(QComboBox::AdjustToContentsOnFirstShow);
+        //ui.baudRate->setSizeAdjustPolicy(QComboBox::AdjustToContentsOnFirstShow);
 
         switch(this->link->getParityType()) {
         case 0:
@@ -177,8 +191,27 @@ SerialConfigurationWindow::SerialConfigurationWindow(LinkInterface* link, QWidge
     }
     else
     {
-        qDebug() << "Link is NOT a serial link, can't open configuration window";
+        QLOG_DEBUG() << "Link is NOT a serial link, can't open configuration window";
     }
+    connect(link,SIGNAL(connected(bool)),this,SLOT(connectionStateChanged(bool)));
+}
+void SerialConfigurationWindow::connectionStateChanged(bool connected)
+{
+    if (connected)
+    {
+        ui.baudRate->setEnabled(false);
+        ui.portName->setEnabled(false);
+    }
+    else
+    {
+        ui.baudRate->setEnabled(true);
+        ui.portName->setEnabled(true);
+    }
+}
+
+void SerialConfigurationWindow::setAdvancedSettings(bool visible)
+{
+    ui.advGroupBox->setShown(visible);
 }
 
 SerialConfigurationWindow::~SerialConfigurationWindow()
@@ -215,29 +248,37 @@ void SerialConfigurationWindow::setupPortList()
 {
     if (!link) return;
 
+    QLOG_DEBUG() << "Link is " << link->isConnected();
+
     // Get the ports available on this system
-    QVector<QString>* ports = link->getCurrentPorts();
+    QList<QString> ports = link->getCurrentPorts();
 
     QString storedName = this->link->getPortName();
     bool storedFound = false;
 
     // Add the ports in reverse order, because we prepend them to the list
-    for (int i = ports->size() - 1; i >= 0; --i)
+    ui.portName->clear();
+    for (int i = ports.count() - 1; i >= 0; --i)
     {
         // Prepend newly found port to the list
-        if (ui.portName->findText(ports->at(i)) == -1)
+        /*if (ui.portName->findText(ports[i]) == -1)
         {
-            ui.portName->insertItem(0, ports->at(i));
-            if (!userConfigured) ui.portName->setEditText(ports->at(i));
+            ui.portName->insertItem(0, ports[i]);
+            if (!userConfigured) ui.portName->setEditText(ports[i]);
         }
-
+       */
+        ui.portName->insertItem(0,ports[i]);
         // Check if the stored link name is still present
-        if (ports->at(i).contains(storedName) || storedName.contains(ports->at(i)))
+        if (ports[i].contains(storedName) || storedName.contains(ports[i]))
             storedFound = true;
     }
 
     if (storedFound)
-        ui.portName->setEditText(storedName);
+    {
+        int index = ui.portName->findText(storedName);
+        //ui.portName->setEditText(storedName);
+        ui.portName->setCurrentIndex(index);
+    }
 }
 
 void SerialConfigurationWindow::enableFlowControl(bool flow)
@@ -259,7 +300,7 @@ void SerialConfigurationWindow::setParityNone(bool accept)
 
 void SerialConfigurationWindow::setParityOdd(bool accept)
 {
-    if (accept) link->setParityType(1);
+    if (accept) link->setParityType(1); // [TODO] This needs to be Fixed [BB]
 }
 
 void SerialConfigurationWindow::setParityEven(bool accept)
@@ -276,6 +317,14 @@ void SerialConfigurationWindow::setPortName(QString port)
 
     if (this->link->getPortName() != port) {
         link->setPortName(port);
+    }
+    for (int i=0;i<ui.baudRate->count();i++)
+    {
+        if (ui.baudRate->itemData(i).toInt() == link->getBaudRate())
+        {
+            ui.baudRate->setCurrentIndex(i);
+            break;
+        }
     }
     userConfigured = true;
 }

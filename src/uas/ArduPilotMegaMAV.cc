@@ -27,6 +27,8 @@ This file is part of the QGROUNDCONTROL project
  */
 
 #include "ArduPilotMegaMAV.h"
+#include "QsLog.h"
+#include "GAudioOutput.h"
 
 #ifndef MAVLINK_MSG_ID_MOUNT_CONFIGURE
 #include "ardupilotmega/mavlink_msg_mount_configure.h"
@@ -36,6 +38,181 @@ This file is part of the QGROUNDCONTROL project
 #include "ardupilotmega/mavlink_msg_mount_control.h"
 #endif
 
+#include <QString>
+
+CustomMode::CustomMode()
+{
+}
+
+CustomMode::CustomMode(int aMode)
+{
+    m_mode = aMode;
+}
+
+int CustomMode::modeAsInt()
+{
+    return m_mode;
+}
+
+QString CustomMode::operator <<(int aMode)
+{
+    return QString::number(aMode);
+}
+
+
+ApmPlane::ApmPlane(planeMode aMode)
+{
+    CustomMode(static_cast<int>(aMode));
+}
+
+ApmPlane::planeMode ApmPlane::mode()
+{
+    return static_cast<ApmPlane::planeMode>(m_mode);
+}
+
+QString ApmPlane::stringForMode(int aMode)
+{
+    switch(static_cast<planeMode>(aMode)) {
+    case MANUAL:
+        return "Manual";
+        break;
+    case CIRCLE:
+        return "Circle";
+        break;
+    case STABILIZE:
+        return "Stabilize";
+        break;
+    case TRAINING:
+        return "Training";
+        break;
+    case FLY_BY_WIRE_A:
+        return "Fly-By-Wire B";
+        break;
+    case FLY_BY_WIRE_B:
+        return "Fly-By-Wire B";
+        break;
+    case AUTO:
+        return "Auto";
+        break;
+    case RTL:
+        return "Return to Launch";
+        break;
+    case LOITER:
+        return "Loiter";
+        break;
+    case GUIDED:
+        return "Guided";
+        break;
+    case INITIALIZING:
+        return "Initializing";
+        break;
+    default:
+        return "Undefined";
+    }
+}
+
+ApmCopter::ApmCopter(copterMode aMode)
+{
+     CustomMode(static_cast<int>(aMode));
+}
+
+ApmCopter::copterMode ApmCopter::mode()
+{
+    return static_cast<ApmCopter::copterMode>(m_mode);
+}
+
+QString ApmCopter::stringForMode(int aMode) {
+    switch(static_cast<copterMode>(aMode)) {
+    case STABILIZE:
+        return "Stabilize";
+        break;
+    case ACRO:
+        return "Acro";
+        break;
+    case ALT_HOLD:
+        return "Altitude Hold";
+        break;
+    case AUTO:
+        return "Auto";
+        break;
+    case GUIDED:
+        return "Guided";
+        break;
+    case LOITER:
+        return "Loiter";
+        break;
+    case RTL:
+        return "Return to Launch";
+        break;
+    case CIRCLE:
+        return "Circle";
+        break;
+    case POSITION:
+        return "Position";
+        break;
+    case LAND:
+        return "Land";
+        break;
+    case OF_LOITER:
+        return "OF Loiter";
+        break;
+    case TOY_A:
+        return "Toy A";
+        break;
+    case TOY_M:
+        return "Toy M";
+        break;
+    case SPORT:
+        return "Sport";
+        break;
+    default:
+        return "Undefined";
+    }
+}
+
+ApmRover::ApmRover(roverMode aMode)
+{
+     CustomMode(static_cast<int>(aMode));
+}
+
+ApmRover::roverMode ApmRover::mode()
+{
+    return static_cast<ApmRover::roverMode>(m_mode);
+}
+
+QString ApmRover::stringForMode(int aMode) {
+    switch(static_cast<roverMode>(aMode)) {
+    case MANUAL:
+        return "Manual";
+        break;
+    case LEARNING:
+        return "Learning";
+        break;
+    case STEERING:
+        return "Steering";
+        break;
+    case HOLD:
+        return "Hold";
+        break;
+    case AUTO:
+        return "Auto";
+        break;
+    case RTL:
+        return "Return to Launch";
+        break;
+    case GUIDED:
+        return "Guided";
+        break;
+    case INITIALIZING:
+        return "Initializing";
+        break;
+    default:
+        return "Undefined";
+    }
+}
+
+
+
 ArduPilotMegaMAV::ArduPilotMegaMAV(MAVLinkProtocol* mavlink, int id) :
     UAS(mavlink, id)//,
     // place other initializers here
@@ -44,21 +221,52 @@ ArduPilotMegaMAV::ArduPilotMegaMAV(MAVLinkProtocol* mavlink, int id) :
     // Ask for all streams at 4 Hz
     //enableAllDataTransmission(4);
     txReqTimer = new QTimer(this);
-    connect(txReqTimer,SIGNAL(timeout()),this,SLOT(sendTxRequests()));
+    connect(txReqTimer,SIGNAL(timeout()),this,SLOT(RequestAllDataStreams()));
 
-    QTimer::singleShot(5000,this,SLOT(sendTxRequests())); //Send an initial TX request in 5 seconds.
+    QTimer::singleShot(5000,this,SLOT(RequestAllDataStreams())); //Send an initial TX request in 5 seconds.
 
     txReqTimer->start(300000); //Resend the TX requests every 5 minutes.
+
+    connect(this,SIGNAL(connected()),this,SLOT(uasConnected()));
+    connect(this,SIGNAL(disconnected()),this,SLOT(uasDisconnected()));
+
+    connect(this, SIGNAL(armed()), this, SLOT(systemArmed()));
+    connect(this, SIGNAL(disarmed()), this, SLOT(systemDisarmed()));
+
+    // checking for customeMode changes for Audio.
+    connect(this, SIGNAL(navModeChanged(int,int,QString)),
+            this, SLOT(navModeChanged(int,int,QString)));
+
+    connect(this, SIGNAL(textMessageReceived(int,int,int,QString)),
+            this, SLOT(textMessageReceived(int,int,int,QString)));
 }
-void ArduPilotMegaMAV::sendTxRequests()
+
+void ArduPilotMegaMAV::RequestAllDataStreams()
 {
+    QLOG_DEBUG() << "APM:RequestAllDataRates";
     enableExtendedSystemStatusTransmission(2);
+
     enablePositionTransmission(3);
+
     enableExtra1Transmission(10);
+
     enableExtra2Transmission(10);
+
     enableExtra3Transmission(2);
+
     enableRawSensorDataTransmission(2);
+
     enableRCChannelDataTransmission(2);
+}
+void ArduPilotMegaMAV::uasConnected()
+{
+    QLOG_INFO() << "APM Connected";
+    QTimer::singleShot(500,this,SLOT(RequestAllDataStreams())); //Send an initial TX request in 0.5 seconds.
+}
+
+void ArduPilotMegaMAV::uasDisconnected()
+{
+    QLOG_INFO() << "APM disconnected";
 }
 
 /**
@@ -79,11 +287,11 @@ void ArduPilotMegaMAV::receiveMessage(LinkInterface* link, mavlink_message_t mes
         switch (message.msgid) {
         case MAVLINK_MSG_ID_HEARTBEAT:
         {
-            //qDebug() << "ARDUPILOT RECEIVED HEARTBEAT";
+            //QLOG_DEBUG() << "ARDUPILOT RECEIVED HEARTBEAT";
             break;
         }
         default:
-            //qDebug() << "\nARDUPILOT RECEIVED MESSAGE WITH ID" << message.msgid;
+            //QLOG_DEBUG() << "\nARDUPILOT RECEIVED MESSAGE WITH ID" << message.msgid;
             break;
         }
     }
@@ -107,4 +315,114 @@ void ArduPilotMegaMAV::setMountControl(double pa,double pb,double pc,bool islatl
         mavlink_msg_mount_control_pack(255,1,&msg,this->uasId,1,pa,pb,pc,0);
     }
     sendMessage(msg);
+}
+
+void ArduPilotMegaMAV::armSystem()
+{
+    QLOG_INFO() << "APM ARM System";
+    mavlink_message_t msg;
+    mavlink_msg_command_long_pack(mavlink->getSystemId(),
+                                  mavlink->getComponentId(),
+                                  &msg,
+                                  getUASID(),                    // uint8_t target_system,
+                                  MAV_COMP_ID_SYSTEM_CONTROL,    // uint8_t target_component
+                                  MAV_CMD_COMPONENT_ARM_DISARM,    // uint16_t command,
+                                  1,                // uint8_t confirmation,
+                                  1.0,             // float param1,
+                                  0,                // float param2,
+                                  0,                // float param3,
+                                  0,                // float param4,
+                                  0,                // float param5,
+                                  0,                // float param6,
+                                  0                 // float param7)
+                                  );
+    sendMessage(msg);
+}
+
+void ArduPilotMegaMAV::disarmSystem()
+{
+    QLOG_INFO() << "APM DISARM System";
+    mavlink_message_t msg;
+    mavlink_msg_command_long_pack(mavlink->getSystemId(),
+                                  mavlink->getComponentId(),
+                                  &msg,
+                                  getUASID(),                    // uint8_t target_system,
+                                  MAV_COMP_ID_SYSTEM_CONTROL,    // uint8_t target_component
+                                  MAV_CMD_COMPONENT_ARM_DISARM,    // uint16_t command,
+                                  1,                // uint8_t confirmation,
+                                  0.0,             // float param1,
+                                  0,                // float param2,
+                                  0,                // float param3,
+                                  0,                // float param4,
+                                  0,                // float param5,
+                                  0,                // float param6,
+                                  0                 // float param7)
+                                  );
+    sendMessage(msg);
+}
+
+void ArduPilotMegaMAV::systemArmed()
+{
+    QLOG_DEBUG() << "APM: Armed";
+    GAudioOutput::instance()->say("Armed!");
+}
+
+void ArduPilotMegaMAV::systemDisarmed()
+{
+    QLOG_DEBUG() << "APM: Disarmed";
+    GAudioOutput::instance()->say("Disarmed!");
+}
+
+void ArduPilotMegaMAV::navModeChanged(int uasid, int mode, const QString& text)
+{
+    QLOG_DEBUG() << "APM: Nav Mode Changed:" << mode << text;
+}
+
+QString ArduPilotMegaMAV::getCustomModeText()
+{
+    QLOG_DEBUG() << "APM: getCustomModeText()";
+    QString customModeString;
+
+    int systemType = getSystemType();
+            switch(systemType) {
+        case MAV_TYPE_FIXED_WING:
+            customModeString = ApmPlane::stringForMode(custom_mode);
+            break;
+
+        case MAV_TYPE_QUADROTOR:
+        case MAV_TYPE_OCTOROTOR:
+        case MAV_TYPE_HELICOPTER:
+        case MAV_TYPE_TRICOPTER:
+            customModeString = ApmCopter::stringForMode(custom_mode);
+            break;
+
+        case MAV_TYPE_GROUND_ROVER:
+            customModeString = ApmCopter::stringForMode(custom_mode);
+            break;
+
+        default:
+            QLOG_WARN() << "APM: Unsupported System Type " << systemType;
+            customModeString = tr("APM UNKOWN");
+        }
+    return customModeString;
+}
+
+QString ArduPilotMegaMAV::getCustomModeAudioText()
+{
+    QLOG_DEBUG() << "APM: getCustomModeAudioText()";
+
+    QString returnString = tr("and mode is ");
+    return returnString + getCustomModeText();
+}
+
+void ArduPilotMegaMAV::textMessageReceived(int uasid, int componentid, int severity, QString text)
+{
+    QLOG_DEBUG() << "APM: Text Message rx'd" << text;
+    if (text.startsWith("PreArm:")) {
+        // Speak the PreArm warning
+        QString audioString = "Pre-arm check:" + text.remove("PreArm:");
+        GAudioOutput::instance()->say(audioString, severity);
+    }
+
+
 }

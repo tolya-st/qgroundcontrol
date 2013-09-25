@@ -26,15 +26,11 @@ This file is part of the QGROUNDCONTROL project
  *   @brief Implementation of CommConfigurationWindow
  *
  *   @author Lorenz Meier <mavteam@student.ethz.ch>
+ *   @author Bill Bonney <billbonney@communistech.com>
  *
  */
 
-#include <QDebug>
-
-#include <QDir>
-#include <QFileInfoList>
-#include <QBoxLayout>
-#include <QWidget>
+#include "QsLog.h"
 
 #include "CommConfigurationWindow.h"
 #include "SerialConfigurationWindow.h"
@@ -55,7 +51,12 @@ This file is part of the QGROUNDCONTROL project
 #include "LinkManager.h"
 #include "MainWindow.h"
 
-CommConfigurationWindow::CommConfigurationWindow(LinkInterface* link, ProtocolInterface* protocol, QWidget *parent) : QWidget(NULL)
+#include <QDir>
+#include <QFileInfoList>
+#include <QBoxLayout>
+#include <QWidget>
+
+CommConfigurationWindow::CommConfigurationWindow(LinkInterface* link, ProtocolInterface* protocol, QWidget *parent) : QWidget(parent)
 {
     this->link = link;
 
@@ -73,11 +74,18 @@ CommConfigurationWindow::CommConfigurationWindow(LinkInterface* link, ProtocolIn
     ui.connectionType->setEnabled(false);
     ui.linkType->setEnabled(false);
     ui.protocolGroupBox->setVisible(false);
+    ui.protocolTypeGroupBox->setVisible(false);
 
     // Connect UI element visibility to checkbox
-    connect(ui.advancedOptionsCheckBox, SIGNAL(clicked(bool)), ui.connectionType, SLOT(setEnabled(bool)));
-    connect(ui.advancedOptionsCheckBox, SIGNAL(clicked(bool)), ui.linkType, SLOT(setEnabled(bool)));
-    connect(ui.advancedOptionsCheckBox, SIGNAL(clicked(bool)), ui.protocolGroupBox, SLOT(setVisible(bool)));
+    //connect(ui.advancedOptionsCheckBox, SIGNAL(clicked(bool)), ui.connectionType, SLOT(setEnabled(bool)));
+    //connect(ui.advancedOptionsCheckBox, SIGNAL(clicked(bool)), ui.linkType, SLOT(setEnabled(bool)));
+    //connect(ui.advancedOptionsCheckBox, SIGNAL(clicked(bool)), ui.protocolGroupBox, SLOT(setVisible(bool)));
+    ui.advancedOptionsCheckBox->setVisible(false);
+    //connect(ui.advCheckBox,SIGNAL(clicked(bool)),ui.advancedOptionsCheckBox,SLOT(setChecked(bool)));
+    connect(ui.advCheckBox,SIGNAL(clicked(bool)),ui.protocolTypeGroupBox,SLOT(setVisible(bool)));
+    connect(ui.advCheckBox, SIGNAL(clicked(bool)), ui.connectionType, SLOT(setEnabled(bool)));
+    connect(ui.advCheckBox, SIGNAL(clicked(bool)), ui.linkType, SLOT(setEnabled(bool)));
+    connect(ui.advCheckBox, SIGNAL(clicked(bool)), ui.protocolGroupBox, SLOT(setVisible(bool)));
 
     // add link types
     ui.linkType->addItem(tr("Serial"), QGC_LINK_SERIAL);
@@ -134,6 +142,7 @@ CommConfigurationWindow::CommConfigurationWindow(LinkInterface* link, ProtocolIn
         ui.linkScrollArea->setWidget(conf);
         ui.linkGroupBox->setTitle(tr("Serial Link"));
         ui.linkType->setCurrentIndex(0);
+        connect(ui.advCheckBox,SIGNAL(clicked(bool)),conf,SLOT(setAdvancedSettings(bool)));
     }
     UDPLink* udp = dynamic_cast<UDPLink*>(link);
     if (udp != 0) {
@@ -178,7 +187,7 @@ CommConfigurationWindow::CommConfigurationWindow(LinkInterface* link, ProtocolIn
 			&& xbee == 0
 #endif // XBEELINK
        ) {
-        qDebug() << "Link is NOT a known link, can't open configuration window";
+        QLOG_DEBUG() << "Link is NOT a known link, can't open configuration window";
     }
 
 #ifdef XBEELINK
@@ -192,7 +201,7 @@ CommConfigurationWindow::CommConfigurationWindow(LinkInterface* link, ProtocolIn
         ui.protocolScrollArea->setWidget(conf);
         ui.protocolGroupBox->setTitle(protocol->getName()+" (Global Settings)");
     } else {
-        qDebug() << "Protocol is NOT MAVLink, can't open configuration window";
+        QLOG_DEBUG() << "Protocol is NOT MAVLink, can't open configuration window";
     }
 
     // Open details for UDP link if necessary
@@ -284,7 +293,7 @@ void CommConfigurationWindow::setLinkType(int linktype)
 
 void CommConfigurationWindow::setProtocol(int protocol)
 {
-    qDebug() << "Changing to protocol" << protocol;
+    QLOG_DEBUG() << "Changing to protocol" << protocol;
 }
 
 void CommConfigurationWindow::setConnection()

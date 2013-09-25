@@ -29,24 +29,23 @@ This file is part of the QGROUNDCONTROL project
  *
  */
 
+#include "QsLog.h"
+#include "UASManager.h"
+#include "HSIDisplay.h"
+#include "QGC.h"
+#include "Waypoint.h"
+#include "UASWaypointManager.h"
+//#include "Waypoint2DIcon.h"
+#include "MAV2DIcon.h"
+#include "MainWindow.h"
+
 #include <QFile>
 #include <QStringList>
 #include <QPainter>
 #include <QGraphicsScene>
 #include <QHBoxLayout>
 #include <QDoubleSpinBox>
-#include "UASManager.h"
-#include "HSIDisplay.h"
-#include "QGC.h"
-#include "Waypoint.h"
-#include "UASWaypointManager.h"
 #include <qmath.h>
-//#include "Waypoint2DIcon.h"
-#include "MAV2DIcon.h"
-#include "MainWindow.h"
-
-#include <QDebug>
-
 
 HSIDisplay::HSIDisplay(QWidget *parent) :
     HDDisplay(NULL, "HSI", parent),
@@ -234,7 +233,7 @@ void HSIDisplay::paintEvent(QPaintEvent * event)
     Q_UNUSED(event);
     //paintGL();
     //    static quint64 interval = 0;
-    //    //qDebug() << "INTERVAL:" << MG::TIME::getGroundTimeNow() - interval << __FILE__ << __LINE__;
+    //    //QLOG_DEBUG() << "INTERVAL:" << MG::TIME::getGroundTimeNow() - interval << __FILE__ << __LINE__;
     //    interval = MG::TIME::getGroundTimeNow();
     renderOverlay();
 }
@@ -243,7 +242,7 @@ void HSIDisplay::renderOverlay()
 {
     if (!isVisible() || !uas) return;
 #if (QGC_EVENTLOOP_DEBUG)
-    qDebug() << "EVENTLOOP:" << __FILE__ << __LINE__;
+    QLOG_DEBUG() << "EVENTLOOP:" << __FILE__ << __LINE__;
 #endif
     // Center location of the HSI gauge items
 
@@ -728,7 +727,7 @@ void HSIDisplay::mouseDoubleClickEvent(QMouseEvent * event)
             setBodySetpointCoordinateXY(p.x(), p.y());
             if (!userZSetPointSet) setBodySetpointCoordinateZ(0.0);
         }
-        //        qDebug() << "Double click at x: " << screenToRefX(event->x()) - xCenterPos << "y:" << screenToRefY(event->y()) - yCenterPos;
+        //        QLOG_DEBUG() << "Double click at x: " << screenToRefX(event->x()) - xCenterPos << "y:" << screenToRefY(event->y()) - yCenterPos;
     }
 }
 
@@ -1014,7 +1013,7 @@ void HSIDisplay::setBodySetpointCoordinateXY(double x, double y)
         uiXSetCoordinate = sp.x();
         uiYSetCoordinate = sp.y();
 
-        qDebug() << "Attempting to set new setpoint at x: " << x << "metric y:" << y;
+        QLOG_DEBUG() << "Attempting to set new setpoint at x: " << x << "metric y:" << y;
 
 
         //sendBodySetPointCoordinates();
@@ -1170,7 +1169,7 @@ void HSIDisplay::updateLocalization(UASInterface* uas, int fix)
     Q_UNUSED(uas);
     positionFix = fix;
     positionFixKnown = true;
-    //qDebug() << "LOCALIZATION FIX CALLED";
+    //QLOG_DEBUG() << "LOCALIZATION FIX CALLED";
 }
 /**
  * @param fix 0: lost, 1: at least one satellite, but no GPS fix, 2: 2D localization, 3: 3D localization
@@ -1189,7 +1188,7 @@ void HSIDisplay::updateVisionLocalization(UASInterface* uas, int fix)
     Q_UNUSED(uas);
     visionFix = fix;
     visionFixKnown = true;
-    //qDebug() << "VISION FIX GOT CALLED";
+    //QLOG_DEBUG() << "VISION FIX GOT CALLED";
 }
 
 /**
@@ -1478,7 +1477,7 @@ void HSIDisplay::drawPositionDirection(float xRef, float yRef, float radius, con
         painter->setBrush(indexBrush);
         drawPolygon(p, painter);
 
-        //qDebug() << "DRAWING POS SETPOINT X:" << posXSet << "Y:" << posYSet << angle;
+        //QLOG_DEBUG() << "DRAWING POS SETPOINT X:" << posXSet << "Y:" << posYSet << angle;
     }
 }
 
@@ -1514,7 +1513,7 @@ void HSIDisplay::drawAttitudeDirection(float xRef, float yRef, float radius, con
 
         // TODO Draw Yaw indicator
 
-        //qDebug() << "DRAWING ATT SETPOINT X:" << attXSet << "Y:" << attYSet << angle;
+        //QLOG_DEBUG() << "DRAWING ATT SETPOINT X:" << attXSet << "Y:" << attYSet << angle;
     }
 }
 

@@ -32,17 +32,18 @@ This file is part of the QGROUNDCONTROL project
 #ifndef SERIALLINK_H
 #define SERIALLINK_H
 
+#include "SerialLinkInterface.h"
+#include <QPointer>
 #include <QObject>
 #include <QThread>
 #include <QMutex>
 #include <QString>
-#include "qserialport.h"
+#include <QMap>
+#include <qserialport.h>
 #include <configuration.h>
-#include "SerialLinkInterface.h"
-#ifdef _WIN32
-#include "windows.h"
-#endif
 
+class UASInterface;
+class LinkManager;
 
 /**
  * @brief The SerialLink class provides cross-platform access to serial links.
@@ -58,18 +59,15 @@ class SerialLink : public SerialLinkInterface
     //Q_INTERFACES(SerialLinkInterface:LinkInterface)
 
 public:
-    SerialLink(QString portname = "",
-               int baudrate=57600,
-               bool flow=false,
-               bool parity=false,
-               int dataBits=8,
-               int stopBits=1);
+    SerialLink();
     ~SerialLink();
 
     static const int poll_interval = SERIAL_POLL_INTERVAL; ///< Polling interval, defined in configuration.h
 
     /** @brief Get a list of the currently available ports */
-    QVector<QString>* getCurrentPorts();
+    QList<QString> getCurrentPorts();
+
+    void requestReset();
 
     bool isConnected() const;
     qint64 bytesAvailable();
@@ -108,10 +106,20 @@ public:
     void writeSettings();
 
     void run();
+    void run2();
 
     int getLinkQuality() const;
     bool isFullDuplex() const;
     int getId() const;
+
+    /** @brief Returns a list of Serial Ports known to the LinkManager */
+    static const QList<SerialLink*> getSerialLinks(LinkManager* linkManager);
+
+    /** @brief Returns a list of Serial Ports known to a UAS */
+    static const QList<SerialLink*> getSerialLinks(UASInterface* uas);
+
+signals: //[TODO] Refactor to Linkinterface
+    void updateLink(LinkInterface*);
 
 public slots:
     bool setPortName(QString portName);
@@ -140,40 +148,41 @@ public slots:
     bool connect();
     bool disconnect();
 
-protected slots:
-    void checkForBytes();
+    void linkError(QSerialPort::SerialPortError error);
 
 protected:
-    quint64 bytesRead;
-    TNX::QSerialPort * port;
-    TNX::QPortSettings portSettings;
-#ifdef _WIN32
-    HANDLE winPort;
-    DCB winPortSettings;
-#endif
-    QString porthandle;
-    QString name;
-    int timeout;
-    int id;
+    quint64 m_bytesRead;
+    QPointer<QSerialPort> m_port;
+    int m_baud;
+    int m_dataBits;
+    int m_flowControl;
+    int m_stopBits;
+    int m_parity;
+    QString m_portName;
+    int m_timeout;
+    int m_id;
 
-    quint64 bitsSentTotal;
-    quint64 bitsSentShortTerm;
-    quint64 bitsSentCurrent;
-    quint64 bitsSentMax;
-    quint64 bitsReceivedTotal;
-    quint64 bitsReceivedShortTerm;
-    quint64 bitsReceivedCurrent;
-    quint64 bitsReceivedMax;
-    quint64 connectionStartTime;
-    QMutex statisticsMutex;
-    QMutex dataMutex;
-    QVector<QString>* ports;
+    quint64 m_bitsSentTotal;
+    quint64 m_bitsSentShortTerm;
+    quint64 m_bitsSentCurrent;
+    quint64 m_bitsSentMax;
+    quint64 m_bitsReceivedTotal;
+    quint64 m_bitsReceivedShortTerm;
+    quint64 m_bitsReceivedCurrent;
+    quint64 m_bitsReceivedMax;
+    quint64 m_connectionStartTime;
+    QMutex m_statisticsMutex;
+    QMutex m_dataMutex;
+    QMutex m_writeMutex;
+    QList<QString> m_ports;
 
 private:
-	volatile bool m_stopp;
+    volatile bool m_stopp;
+    volatile bool m_reqReset;
 	QMutex m_stoppMutex;
+    QByteArray m_transmitBuffer;
+    QMap<QString,int> m_portBaudMap;
 
-    void setName(QString name);
     bool hardwareConnect();
 
 signals:

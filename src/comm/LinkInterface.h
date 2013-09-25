@@ -61,6 +61,8 @@ public:
      */
     virtual QString getName() const = 0;
 
+    virtual void requestReset() = 0;
+
     /**
      * @brief Determine the connection status
      *
@@ -215,9 +217,20 @@ signals:
     void connected();
 
     /**
+     * @brief This signal is emitted when the link is connected
+     **/
+    void connected(LinkInterface* linkInterface);
+
+
+    /**
      * @brief This signal is emitted instantly when the link is disconnected
      **/
     void disconnected();
+
+    /**
+     * @brief This signal is emitted when the link is disconnected
+     **/
+    void disconnected(LinkInterface* linkInterface);
 
     /**
      * @brief This signal is emitted instantly when the link status changes
