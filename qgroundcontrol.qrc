@@ -90,6 +90,7 @@
         <file>files/images/status/colorbars.png</file>
         <file>files/styles/style-dark.css</file>
         <file>files/images/splash.png</file>
+        <file>files/styles/style-indoor.css</file>
         <file>files/audio/alert.wav</file>
         <file>demo-log.txt</file>
         <file>files/images/mapproviders/openstreetmap.png</file>
@@ -107,6 +108,65 @@
         <file>files/images/actions/qgroundcontrol-apm.svg</file>
         <file>files/images/actions/qgroundcontrol-ardrone.svg</file>
         <file>files/images/actions/qgroundcontrol-wifi.svg</file>
+        <file>files/images/apm_planner_logo.png</file>
+        <file>files/images/apm_planner_logo_splash.png</file>
+        <file>files/images/apm_planner_2_0-07.png</file>
+        <file>files/images/apm_planner_2_0-08.png</file>
+        <file>files/images/mavs/frames_plus.png</file>
+        <file>files/images/mavs/frames_x.png</file>
+        <file>files/images/mavs/frames-05.png</file>
+        <file>files/images/devices/BR-HMC5883-01-2.jpg</file>
+        <file>files/images/devices/BR-APMPWRDEAN-2.jpg</file>
+        <file>files/images/devices/AC-0004-11-2.jpg</file>
+        <file>files/images/devices/BR-0004-03-2.jpg</file>
+        <file>files/images/devices/BR-0016-01-3T.jpg</file>
+        <file>files/images/devices/MinimOSD.jpg</file>
+        <file>files/images/devices/cameraGimalPitch1.png</file>
+        <file>files/images/devices/cameraGimalRoll1.png</file>
+        <file>files/images/devices/cameraGimalYaw.png</file>
+        <file>files/images/devices/Shutter.png</file>
+        <file>files/images/firmware/apmcopter.png</file>
+        <file>files/images/firmware/apmplane.png</file>
+        <file>files/images/firmware/apmrover.png</file>
+        <file>files/images/firmware/FW icons 2013+logos.ai</file>
+        <file>files/images/firmware/heli.png</file>
+        <file>files/images/firmware/heli_off.png</file>
+        <file>files/images/firmware/heli_on.png</file>
+        <file>files/images/firmware/hexa_off.png</file>
+        <file>files/images/firmware/hexa_on.png</file>
+        <file>files/images/firmware/hexaplus.png</file>
+        <file>files/images/firmware/hexax.png</file>
+        <file>files/images/firmware/hexay.png</file>
+        <file>files/images/firmware/octaplus.png</file>
+        <file>files/images/firmware/octax.png</file>
+        <file>files/images/firmware/octo_off.png</file>
+        <file>files/images/firmware/octo_on.png</file>
+        <file>files/images/firmware/octx.png</file>
+        <file>files/images/firmware/plane.png</file>
+        <file>files/images/firmware/plane_off.png</file>
+        <file>files/images/firmware/plane_on.png</file>
+        <file>files/images/firmware/quad_off.png</file>
+        <file>files/images/firmware/quad_on.png</file>
+        <file>files/images/firmware/quad_T_off.png</file>
+        <file>files/images/firmware/quad_T_on.png</file>
+        <file>files/images/firmware/quadplus.png</file>
+        <file>files/images/firmware/quadx.png</file>
+        <file>files/images/firmware/quady.png</file>
+        <file>files/images/firmware/rover.png</file>
+        <file>files/images/firmware/rover_off.png</file>
+        <file>files/images/firmware/rover_on.png</file>
+        <file>files/images/firmware/Tir_off.png</file>
+        <file>files/images/firmware/Tir_on.png</file>
+        <file>files/images/firmware/triy.png</file>
+        <file>files/images/firmware/X8.png</file>
+        <file>files/images/firmware/X8_on.png</file>
+        <file>files/images/firmware/Y6_off.png</file>
+        <file>files/images/firmware/Y6_on.png</file>
+        <file>files/images/mavs/frames-h.png</file>
+        <file>files/ardupilotmega/images/apm2.5.jpg</file>
+        <file>files/ardupilotmega/images/maggps.png</file>
+        <file>files/ardupilotmega/images/px4.jpg</file>
+        <file>files/ardupilotmega/images/Pixhawk.png</file>
     </qresource>
     <qresource prefix="/general">
         <file alias="vera.ttf">files/styles/Vera.ttf</file>
