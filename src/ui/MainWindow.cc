@@ -596,7 +596,7 @@ void MainWindow::buildCommonWidgets()
 
     createDockWidget(engineeringView,new HUD(320,240,this),tr("Video Downlink"),"HEAD_UP_DISPLAY_DOCKWIDGET",VIEW_ENGINEER,Qt::RightDockWidgetArea,QSize(this->width()/1.5,0));
 
-    createDockWidget(engineeringView,new HUD(320,240,this),tr("Video Downlink"),"HEAD_UP_DISPLAY_DOCKWIDGET",VIEW_ENGINEER,Qt::RightDockWidgetArea,QSize(this->width()/1.5,0));
+    createDockWidget(engineeringView,new HUD2(320,240,this),tr("Video Downlink 2"),"HEAD_UP_DISPLAY_2_DOCKWIDGET",VIEW_ENGINEER,Qt::RightDockWidgetArea,QSize(this->width()/1.5,0));
 
     createDockWidget(simView,new PrimaryFlightDisplay(320,240,this),tr("Primary Flight Display"),"PRIMARY_FLIGHT_DISPLAY_DOCKWIDGET",VIEW_SIMULATION,Qt::RightDockWidgetArea,QSize(this->width()/1.5,0));
     createDockWidget(pilotView,new PrimaryFlightDisplay(320,240,this),tr("Primary Flight Display"),"PRIMARY_FLIGHT_DISPLAY_DOCKWIDGET",VIEW_FLIGHT,Qt::LeftDockWidgetArea,QSize(this->width()/1.8,0));

@@ -78,6 +78,8 @@ This file is part of the QGROUNDCONTROL project
 #include "QGCVehicleConfig.h"
 #include "MAVLinkDecoder.h"
 
+#include "../hud2/HUD2.h"
+
 class QGCMapTool;
 class QGCMAVLinkMessageSender;
 class QGCFirmwareUpdate;
@@ -406,6 +408,8 @@ protected:
     QPointer<SubMainWindow> engineeringView;
     QPointer<SubMainWindow> simView;
     QPointer<SubMainWindow> terminalView;
+
+    QPointer<HUD2> hud2Widget;
 
     // Center widgets
     QPointer<Linecharts> linechartWidget;
